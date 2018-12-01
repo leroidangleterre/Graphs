@@ -275,4 +275,75 @@ public class Tree{
             this.x = (totalBranchesWidth - currentNodeWidth) / 2;
         }
     }
+
+    public int getRootValue(){
+        return this.value;
+    }
+
+    public boolean containsValue(int testValue){
+        return this.findValue(testValue) != null;
+    }
+
+    public Tree findValue(int testValue){
+        // Check if the entire tree starts with the requested value.
+        if(this.value == testValue){
+            return this;
+        } else{
+            // Check if one branch starts with the requested value.
+            for(Tree branch : this.branches){
+                if(branch.value == testValue){
+                    return branch;
+                }
+            }
+            // Nothing found at the root of the branches, so we recursively search deeper.
+            for(Tree branch : this.branches){
+                Tree result = branch.findValue(testValue);
+                if(result != null){
+                    // Found the value in one sub-branch.
+                    return result;
+                }
+            }
+        }
+        // Neither the root nor the branches contain the requested value.
+        return null;
+    }
+
+    /**
+     * Add a new node as the root of the current tree.
+     *
+     */
+    public void addRoot(int newRootValue){
+
+        // Clone the original root: that will become the first internal layer.
+        Tree firstLayer = new Tree(this.value);
+
+        // Add all the branches of the original root to the clone.
+        for(Tree branch : this.branches){
+            firstLayer.branches.add(branch);
+        }
+        // Remove the branches from the original node.
+        this.branches.clear();
+
+        // Link the original node to its copy.
+        this.branches.add(firstLayer);
+
+        // Set the new root value.
+        this.value = newRootValue;
+    }
+
+    /**
+     * Add a tree as a new branch. Find within the current tree the node whose
+     * value is the root of the newly added tree; incorporate the newly added
+     * tree as another branch of the current tree. If the root value of the new
+     * branch is not found in the tree, do nothing.
+     */
+    public void mergeBranch(Tree mergedTree){
+        int newVal = mergedTree.getRootValue();
+        Tree addingPoint = this.findValue(newVal);
+        if(addingPoint != null){
+            for(Tree addedBranch : mergedTree.branches){
+                addingPoint.branches.add(addedBranch);
+            }
+        }
+    }
 }
