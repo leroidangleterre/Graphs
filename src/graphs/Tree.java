@@ -15,6 +15,10 @@ import java.util.ArrayList;
  */
 public class Tree{
 
+    // Type of display: regular up-down tree (0) of angled-tree (1) or stairs-like (2)
+    int typeOfDisplay = 0;
+    double angle = 0;
+
     // The value of the root node
     private int value;
 
@@ -25,18 +29,21 @@ public class Tree{
     private static int MAX_NODES = 2;
 
     // Coordinates on the 2d-plane when painted on a panel:
-    private int x, y;
+    private double x, y;
 
-    // Spacing between two consectuive columns (in pixels)
+    // Spacing between two consecutive columns (in pixels)
     int columnSpacing = 10;
     // Spacing between two consecutive lines (in pixels)
-    int lineSpacing = 25;
+    int lineSpacing = 500;
+
+    int maxInternalValue = 0;
 
     public Tree(int val){
         this.value = val;
         this.branches = new ArrayList<>();
         this.x = 0;
         this.y = 0;
+        this.maxInternalValue = val;
     }
 
     /**
@@ -76,6 +83,7 @@ public class Tree{
                 newBranch.addValue(value, depth - 1);
             }
         }
+        this.maxInternalValue = Math.max(value, maxInternalValue);
     }
 
     /**
@@ -130,40 +138,84 @@ public class Tree{
             Tree shortestBranch = this.getShortestBranch();
             shortestBranch.addValueEq(value);
         }
+        this.maxInternalValue = Math.max(value, maxInternalValue);
     }
 
     /**
-     * Paint the tree on the graphics
+     * Paint the tree on the Graphics. When the user scrolls to the right (in
+     * order to see the right-hand side of the graph), then the value x0 becomes
+     * negative.
      *
+     * @param g
      */
-    public void paint(Graphics g){
-
-        // The height of the current node.
-        int nodeHeight = g.getFontMetrics().getHeight();
-        g.setColor(Color.black);
-        String str = this.value + "";
-        g.drawString(str, this.x, this.y);
-
-        // Draw a rectangle around the number.
-        char[] chars = ("" + this.value).toCharArray();
-        int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length); // The width of the current node.
-        g.drawRect(x, y - nodeHeight + lineSpacing, currentNodeWidth, nodeHeight - lineSpacing);
-
-        for(Tree branch : this.branches){
-            // Paint the branch
-            branch.paint(g);
-            // Paint the link between the branch and the current node
+    public void paint(Graphics g, int x0, int y0, double zoom){
+        if(typeOfDisplay == 0){
+            // The height of the current node.
+            int nodeHeight = g.getFontMetrics().getHeight();
             g.setColor(Color.black);
-            int xStart = this.x + currentNodeWidth / 2;
-            int yStart = this.y;
+            String str = this.value + "";
 
-            // The width of the root of the branch.
-            char[] branchChars = ("" + branch.value).toCharArray();
-            int branchRootNodeWidth = g.getFontMetrics().charsWidth(branchChars, 0, branchChars.length);
-            int branchRootNodeHeight = g.getFontMetrics().getHeight();
-            int xEnd = branch.x + branchRootNodeWidth / 2;
-            int yEnd = branch.y - branchRootNodeHeight + lineSpacing;
-            g.drawLine(xStart, yStart, xEnd, yEnd);
+//        // Display the digits only if there is enough room.
+//        if(zoom >= 1){
+//            g.drawString(str, (int) (x0 + (this.x * zoom)), (int) (y0 + (this.y * zoom)));
+//        }
+            // Draw a red dot at the origin of the node.
+//            g.setColor(Color.red);
+//            g.fillRect((int) (x0 + (this.x * zoom)) - 2,
+//                    (int) (y0 + (this.y * zoom)) - 2,
+//                    5, 5);
+            // Draw a rectangle around the number.
+            char[] chars = ("" + this.value).toCharArray();
+            int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length); // The width of the current node.
+            g.setColor(Color.black);
+            g.drawRect((int) (x0 + (this.x - currentNodeWidth / 2) * zoom),
+                    (int) (y0 + (this.y - nodeHeight / 2) * zoom),
+                    (int) (currentNodeWidth * zoom),
+                    (int) ((nodeHeight) * zoom));
+
+            for(Tree branch : this.branches){
+                // Paint the branch
+                branch.paint(g, x0, y0, zoom);
+                // Paint the link between the branch and the current node
+                g.setColor(Color.black);
+                int xStart = (int) (x0 + this.x * zoom);
+                int yStart = (int) (y0 + this.y * zoom);
+
+                // The width of the root of the branch.
+                char[] branchChars = ("" + branch.value).toCharArray();
+                int branchRootNodeWidth = g.getFontMetrics().charsWidth(branchChars, 0, branchChars.length);
+                int branchRootNodeHeight = g.getFontMetrics().getHeight();
+                int xEnd = (int) (x0 + (branch.x) * zoom);
+                int yEnd = (int) (y0 + (branch.y) * zoom);
+                g.drawLine(xStart, yStart, xEnd, yEnd);
+            }
+        } else if(typeOfDisplay == 1 || typeOfDisplay == 2){
+
+            // Draw a circle centered on the point
+            int radius = (int) (0.5 * zoom);
+            int xCenter = (int) (x0 + (this.x) * zoom);
+            int yCenter = (int) (y0 + (this.y) * zoom);
+
+            g.setColor(Color.red);
+            g.fillOval(xCenter - radius, yCenter - radius, 2 * radius, 2 * radius);
+//            System.out.println("painting a circle: " + (xCenter - radius) + ", " + (yCenter - radius) + ", " + 2 * radius + ", " + 2 * radius);
+
+            g.setColor(Color.black);
+            g.drawOval(xCenter - radius, yCenter - radius, 2 * radius, 2 * radius);
+
+            // Draw all the branches and link them to the current circle.
+            for(Tree branch : this.branches){
+                // Paint the branch
+                branch.paint(g, x0, y0, zoom);
+                // Paint the link between the branch and the current node
+                g.setColor(Color.black);
+                int xStart = (int) (x0 + this.x * zoom);
+                int yStart = (int) (y0 + this.y * zoom);
+                int xEnd = (int) (x0 + branch.x * zoom);
+                int yEnd = (int) (y0 + branch.y * zoom);
+
+                g.drawLine(xStart, yStart, xEnd, yEnd);
+            }
         }
     }
 
@@ -215,12 +267,13 @@ public class Tree{
             // If the tree has no leaf.
             return currentNodeWidth;
         } else{
-            int branchesWidth = 0;
+            int totalWidth = 0;
             for(Tree branch : this.branches){
-                branchesWidth += branch.getWidthInPixels(g) + columnSpacing;
+                totalWidth += branch.getWidthInPixels(g) + columnSpacing;
             }
-            branchesWidth -= columnSpacing;
-            return branchesWidth;
+            totalWidth -= columnSpacing;
+            return Math.max(totalWidth, currentNodeWidth);
+
         }
     }
 
@@ -228,10 +281,10 @@ public class Tree{
      * Move a tree horizontally.
      *
      */
-    public void shiftHorizontally(int dx){
+    public void moveToRightOrLeft(double dx){
         this.x += dx;
         for(Tree branch : this.branches){
-            branch.shiftHorizontally(dx);
+            branch.moveToRightOrLeft(dx);
         }
     }
 
@@ -239,10 +292,10 @@ public class Tree{
      * Move a tree vertically.
      *
      */
-    public void shiftVertically(int dy){
+    public void moveUpOrDown(double dy){
         this.y += dy;
         for(Tree branch : this.branches){
-            branch.shiftVertically(dy);
+            branch.moveUpOrDown(dy);
         }
     }
 
@@ -252,23 +305,85 @@ public class Tree{
      * be located horizontally at the mean x-position of all the branches.
      */
     public void computeCoordinates(Graphics g){
+        this.x = 30;
         this.y = 30;
 
-        // The height of the current node.
-        int currentNodeHeight = g.getFontMetrics().getHeight();
+        if(typeOfDisplay == 0){
+            // The height of the current node.
+            int currentNodeHeight = g.getFontMetrics().getHeight();
 
-        int totalBranchesWidth = 0;
-        for(Tree branch : this.branches){
-            branch.computeCoordinates(g);
-            branch.shiftHorizontally(totalBranchesWidth);
-            totalBranchesWidth += branch.getWidthInPixels(g) + columnSpacing;
-            branch.shiftVertically(currentNodeHeight + columnSpacing);
+            int totalBranchesWidth = 0;
+            for(Tree branch : this.branches){
+                branch.computeCoordinates(g);
+                if(totalBranchesWidth == 0){
+                    // The first branch must not move.
+                } else{
+                    // Every next branch must be offset.
+                    branch.moveToRightOrLeft(totalBranchesWidth + columnSpacing);
+                }
+                totalBranchesWidth += branch.getWidthInPixels(g) + columnSpacing;
+                branch.moveUpOrDown(currentNodeHeight + lineSpacing);
+            }
+            totalBranchesWidth -= columnSpacing;
+
+            char[] chars = ("" + this.value).toCharArray();
+            int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length);
+
+            if(this.branches.size() == 1){
+                // Only one child, must align on it.
+                this.x = this.branches.get(0).x;
+            } else{
+                centerHorizontally(totalBranchesWidth, currentNodeWidth);
+            }
+        } else if(typeOfDisplay == 1){
+            double dx = 1.0;
+            double angle = 0.07;
+            // Step 1: translate all branches
+            for(Tree branch : this.branches){
+                branch.computeCoordinates(g);
+                branch.moveToRightOrLeft(dx);
+            }
+            // Step 2: rotate all branches
+            for(Tree branch : this.branches){
+                int val = branch.getRootValue();
+                if((val / 2) * 2 == val){
+                    // Turn clockwise all branches starting with an even number.
+                    branch.rotate(-angle);
+                } else{
+                    // Turn anticlockwise all branches starting with an odd number.
+                    branch.rotate(angle);
+                }
+            }
+            this.x = 0;
+            this.y = 0;
+        } else if(typeOfDisplay == 2){
+            // Even numbers are on the right of their parents; odd numbers are above.
+            this.x = 0;
+            this.y = 0;
+            double dx = 1;
+            for(Tree branch : this.branches){
+                branch.x = 0;
+                branch.y = 0;
+                branch.computeCoordinates(g);
+
+                int val = branch.getRootValue();
+                if(2 * (val / 2) == val){
+                    branch.moveToRightOrLeft(dx);
+                } else{
+                    branch.moveUpOrDown(-dx);
+                }
+            }
         }
-        totalBranchesWidth -= columnSpacing;
+    }
+
+    /**
+     * Place the node at the mean x-coordinate of all its direct children.
+     *
+     * @param totalBranchesWidth
+     */
+    private void centerHorizontally(int totalBranchesWidth, int currentNodeWidth){
 
         // The node must be horizontally centered.
-        char[] chars = ("" + this.value).toCharArray();
-        int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length);
         if(isLeaf()){
             this.x = 0;
         } else{
@@ -278,6 +393,10 @@ public class Tree{
 
     public int getRootValue(){
         return this.value;
+    }
+
+    public int getMaxValue(){
+        return this.maxInternalValue;
     }
 
     public boolean containsValue(int testValue){
@@ -346,4 +465,26 @@ public class Tree{
             }
         }
     }
+
+    /**
+     * Apply a rotation around the origin to all the nodes of the graph.
+     *
+     * @param angle
+     */
+    public void rotate(double angle){
+
+        // Move the root of the graph.
+        double oldX = this.x;
+        double oldY = this.y;
+        double c = Math.cos(angle);
+        double s = Math.sin(angle);
+        this.x = c * oldX - s * oldY;
+        this.y = c * oldY + s * oldX;
+
+        // Move all the branches.
+        for(Tree branch : this.branches){
+            branch.rotate(angle);
+        }
+    }
+
 }

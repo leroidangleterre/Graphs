@@ -23,10 +23,23 @@ public class GraphsMain{
 
         Tree originalTree = new Tree(1);
 
-        int nbElements = 100;
+        int nbElements = 10000;
+        int maxChainLength = -1;
+
+        int windowWidth = 1500;
+        int windowHeight = 700;
+
+        JFrame window = new JFrame();
+        window.addKeyListener(new PanelKeyListener(originalTree));
+
+        JPanel panel = new GraphPanel(originalTree);
 
         for(int start = 2; start <= nbElements; start++){
-            System.out.println("_");
+
+            // Repaint a few times during building.
+            if(100 * (start / 100) == start){
+                System.out.println("computing Collatz sequence from " + start);
+            }
 
             /* Create a tree with the given starting value;
                 Build a tree by adding a root with the next Collatz value;
@@ -35,8 +48,6 @@ public class GraphsMain{
             Tree newTree = new Tree(start);
             boolean loop = true;
             while(loop){
-
-                System.out.println("current value is " + newTree.getRootValue());
 
                 if(originalTree.containsValue(newTree.getRootValue())){
                     // At this point the original tree is supposed to contain the root of newTree,
@@ -51,15 +62,10 @@ public class GraphsMain{
                 newTree.addRoot(newRoot.getRootValue());
             }
         }
-        JFrame window = new JFrame();
-        window.setPreferredSize(new Dimension(640, 480));
-
-        JPanel panel = new GraphPanel(originalTree);
-
         window.setDefaultCloseOperation(EXIT_ON_CLOSE);
         window.add(panel);
         window.setVisible(true);
-        window.setPreferredSize(new Dimension(700, 800));
+        window.setPreferredSize(new Dimension(windowWidth, windowHeight));
         window.pack();
     }
 
