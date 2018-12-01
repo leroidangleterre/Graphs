@@ -27,6 +27,11 @@ public class Tree{
     // Coordinates on the 2d-plane when painted on a panel:
     private int x, y;
 
+    // Spacing between two consectuive columns (in pixels)
+    int columnSpacing = 10;
+    // Spacing between two consecutive lines (in pixels)
+    int lineSpacing = 25;
+
     public Tree(int val){
         this.value = val;
         this.branches = new ArrayList<>();
@@ -79,7 +84,7 @@ public class Tree{
      * @return the depth of the tree
      */
     public int getDepth(){
-        if(this.branches == null || this.branches.isEmpty()){
+        if(isLeaf()){
             return 1;
         } else{
             int maxBranchLength = 0;
@@ -95,7 +100,7 @@ public class Tree{
      * there is only the root, return the whole tree.
      */
     public Tree getShortestBranch(){
-        if(this.branches == null || this.branches.isEmpty()){
+        if(this.isLeaf()){
             return this;
         } else{
             Tree shortestBranch = branches.get(0);
@@ -133,26 +138,32 @@ public class Tree{
      */
     public void paint(Graphics g){
 
-        int underline = 4;
-        int verticalSpacing = 4;
-
+        // The height of the current node.
+        int nodeHeight = g.getFontMetrics().getHeight();
         g.setColor(Color.black);
         String str = this.value + "";
         g.drawString(str, this.x, this.y);
 
         // Draw a rectangle around the number.
-        // The height of the current node.
-        int currentNodeHeight = g.getFontMetrics().getHeight();
-        // The width of the current node.
         char[] chars = ("" + this.value).toCharArray();
-        int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length);
-        g.drawRect(x, y - currentNodeHeight + underline + verticalSpacing, currentNodeWidth, currentNodeHeight - verticalSpacing);
+        int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length); // The width of the current node.
+        g.drawRect(x, y - nodeHeight + lineSpacing, currentNodeWidth, nodeHeight - lineSpacing);
 
         for(Tree branch : this.branches){
             // Paint the branch
             branch.paint(g);
             // Paint the link between the branch and the current node
-            g.drawLine(this.x, this.y, branch.x, branch.y);
+            g.setColor(Color.black);
+            int xStart = this.x + currentNodeWidth / 2;
+            int yStart = this.y;
+
+            // The width of the root of the branch.
+            char[] branchChars = ("" + branch.value).toCharArray();
+            int branchRootNodeWidth = g.getFontMetrics().charsWidth(branchChars, 0, branchChars.length);
+            int branchRootNodeHeight = g.getFontMetrics().getHeight();
+            int xEnd = branch.x + branchRootNodeWidth / 2;
+            int yEnd = branch.y - branchRootNodeHeight + lineSpacing;
+            g.drawLine(xStart, yStart, xEnd, yEnd);
         }
     }
 
@@ -165,34 +176,51 @@ public class Tree{
         // The height of the current node.
         int currentNodeHeight = g.getFontMetrics().getHeight();
 
-        if(this.branches == null || this.branches.isEmpty()){
+        if(isLeaf()){
             // If the tree has no leaf.
             return currentNodeHeight;
         } else{
             // The height of this tree is the height of the tallest branch,
-            // plus the height of the node.
+            // plus the height of the node, plus the lineSpacing between the root and the branches.
             int maxBranchHeight = 0;
             for(Tree branch : this.branches){
                 maxBranchHeight = Math.max(maxBranchHeight, branch.getHeightInPixels(g));
             }
-            return currentNodeHeight + maxBranchHeight;
+            return currentNodeHeight + maxBranchHeight + lineSpacing;
         }
     }
 
+    /**
+     * Return true if the tree is a leaf, i.e. no other branch start from this
+     * node.
+     *
+     * @return true if the tree is a leaf.
+     */
+    public boolean isLeaf(){
+        return this.branches == null || this.branches.isEmpty();
+    }
+
+    /**
+     * Return the width of the tree when displayed on the given Graphics.
+     *
+     * @param g
+     * @return
+     */
     public int getWidthInPixels(Graphics g){
 
         char[] chars = ("" + this.value).toCharArray();
         int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length);
 
-        if(this.branches == null || this.branches.isEmpty()){
+        if(isLeaf()){
             // If the tree has no leaf.
             return currentNodeWidth;
         } else{
             int branchesWidth = 0;
             for(Tree branch : this.branches){
-                branchesWidth += branch.getWidthInPixels(g);
+                branchesWidth += branch.getWidthInPixels(g) + columnSpacing;
             }
-            return currentNodeWidth + branchesWidth;
+            branchesWidth -= columnSpacing;
+            return branchesWidth;
         }
     }
 
@@ -226,9 +254,6 @@ public class Tree{
     public void computeCoordinates(Graphics g){
         this.y = 30;
 
-        int horizontalMargin = 5;
-        int verticalMargin = 12;
-
         // The height of the current node.
         int currentNodeHeight = g.getFontMetrics().getHeight();
 
@@ -236,10 +261,18 @@ public class Tree{
         for(Tree branch : this.branches){
             branch.computeCoordinates(g);
             branch.shiftHorizontally(totalBranchesWidth);
-            totalBranchesWidth += branch.getWidthInPixels(g) + horizontalMargin;
-            branch.shiftVertically(currentNodeHeight + verticalMargin);
+            totalBranchesWidth += branch.getWidthInPixels(g) + columnSpacing;
+            branch.shiftVertically(currentNodeHeight + columnSpacing);
         }
+        totalBranchesWidth -= columnSpacing;
+
         // The node must be horizontally centered.
-        this.x = totalBranchesWidth / 2;
+        char[] chars = ("" + this.value).toCharArray();
+        int currentNodeWidth = g.getFontMetrics().charsWidth(chars, 0, chars.length);
+        if(isLeaf()){
+            this.x = 0;
+        } else{
+            this.x = (totalBranchesWidth - currentNodeWidth) / 2;
+        }
     }
 }

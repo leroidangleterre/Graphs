@@ -25,15 +25,11 @@ public class GraphsMain{
         System.out.println("" + t);
         System.out.println("depth: " + t.getDepth());
 
-        int nbElements = 40;
+        int nbElements = 50;
 
         for(int i = 1; i < nbElements; i++){
             t.addValueEq(i);
-//            System.out.println("" + t);
-//            System.out.println("depth: " + t.getDepth());
         }
-        System.out.println("" + t);
-        System.out.println("depth: " + t.getDepth());
 
         JFrame window = new JFrame();
         window.setPreferredSize(new Dimension(640, 480));
@@ -43,9 +39,8 @@ public class GraphsMain{
         window.setDefaultCloseOperation(EXIT_ON_CLOSE);
         window.add(panel);
         window.setVisible(true);
+        window.setPreferredSize(new Dimension(1900, 800));
         window.pack();
-        panel.setSize(640, 480);
-        panel.setPreferredSize(new Dimension(640, 480));
     }
 
 }
