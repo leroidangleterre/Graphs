@@ -15,21 +15,39 @@ import java.awt.event.KeyListener;
 public class PanelKeyListener implements KeyListener{
 
     private Tree tree;
+    private GraphPanel panel;
 
-    public PanelKeyListener(Tree t){
+    public PanelKeyListener(Tree t, GraphPanel p){
         this.tree = t;
+        this.panel = p;
     }
 
     @Override
     public void keyTyped(KeyEvent e){
         switch(e.getKeyChar()){
         case '+':
-            System.out.println("plus");
-//            tree.addValues();
+            System.out.println("colplus");
+            this.tree.increaseColumnSpacing(true);
+            panel.repaint();
             break;
         case '-':
-            System.out.println("minus");
-//            tree.removeValues()
+            System.out.println("colminus");
+            this.tree.increaseColumnSpacing(false);
+            panel.repaint();
+            break;
+        case '0':
+            System.out.println("lineplus");
+            this.tree.increaseLineSpacing(true);
+            panel.repaint();
+            break;
+        case '1':
+            System.out.println("lineminus");
+            this.tree.increaseLineSpacing(false);
+            panel.repaint();
+            break;
+        case 'd':
+            this.tree.toggleDisplayDigits();
+            panel.repaint();
             break;
         default:
             break;

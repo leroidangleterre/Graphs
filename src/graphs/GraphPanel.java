@@ -15,32 +15,39 @@ import javax.swing.JPanel;
  *
  * @author arthurmanoha
  */
-public class GraphPanel extends JPanel{
+public class GraphPanel extends JPanel {
 
     private Tree tree;
 
     private int x0, y0;
     private double zoom;
     private double standardZoomFactor;
+    private double zoomForCoordinates; // Used to compute the nodes coordinates.
 
     private boolean mouseButtonPressed;
     private int currentXMouse, currentYMouse;
     private int previousXMouse, previousYMouse;
 
-    public GraphPanel(Tree t){
+//    private int fontSize;
+    private boolean mustComputeCoordinates;
+
+    public GraphPanel(Tree t) {
         super();
         this.tree = t;
-        this.x0 = 37;
-        this.y0 = 277;
-        this.zoom = 0.0056745875199823975;
+        this.x0 = 870;
+        this.y0 = 110;
+        zoomForCoordinates = 10.0;
         this.standardZoomFactor = 1.05;
+        setZoomLevel(zoomForCoordinates);
         this.mouseButtonPressed = false;
         this.addMouseListener(new PanelMouseListener(this));
         this.addMouseMotionListener(new PanelMouseMotionListener(this));
         this.addMouseWheelListener(new PanelMouseWheelListener(this));
-        this.addKeyListener(new PanelKeyListener(t));
+        this.addKeyListener(new PanelKeyListener(t, this));
         this.previousXMouse = 0;
         this.previousYMouse = 0;
+        this.mustComputeCoordinates = true;
+        repaint();
     }
 
     /**
@@ -51,27 +58,30 @@ public class GraphPanel extends JPanel{
      * @param g
      */
     @Override
-    protected void paintComponent(Graphics g){
+    protected void paintComponent(Graphics g) {
         g.setColor(Color.white);
         g.fillRect(0, 0, getWidth(), getHeight()); // Clear screen.
-        g.setFont(new Font("Monospaced", PLAIN, 40));
         g.setColor(Color.black);
-        tree.computeCoordinates(g);
-//        System.out.println("calling Tree.paint(" + x0 + ", " + y0 + ")");
+
+        // Compute the coordinates the first time.
+        if (mustComputeCoordinates) {
+            tree.computeCoordinates(g, zoomForCoordinates);
+            mustComputeCoordinates = false;
+        }
         tree.paint(g, x0, y0, zoom);
     }
 
-    public void setMouseButtonPressed(boolean param){
+    public void setMouseButtonPressed(boolean param) {
         this.mouseButtonPressed = param;
     }
 
     /**
      * Action in response to a movement of the mouse to the specified pixel.
      *
-     * @param dx the current abscissa of the mouse.
-     * @param dy the current ordinate of the mouse.
+     * @param xMouse the current abscissa of the mouse.
+     * @param yMouse the current ordinate of the mouse.
      */
-    public void mouseMoved(int xMouse, int yMouse){
+    public void mouseMoved(int xMouse, int yMouse) {
         this.previousXMouse = this.currentXMouse;
         this.previousYMouse = this.currentYMouse;
         this.currentXMouse = xMouse;
@@ -82,40 +92,58 @@ public class GraphPanel extends JPanel{
      * Action in response to a movement of the mouse to the specified pixel,
      * with a button pressed.
      *
-     * @param dx the current abscissa of the mouse.
-     * @param dy the current ordinate of the mouse.
+     * @param xMouse the current abscissa of the mouse.
+     * @param yMouse the current ordinate of the mouse.
      */
-    public void mouseDragged(int xMouse, int yMouse){
+    public void mouseDragged(int xMouse, int yMouse) {
         this.mouseMoved(xMouse, yMouse);
         int dx = currentXMouse - previousXMouse;
         int dy = currentYMouse - previousYMouse;
-        if(mouseButtonPressed){
+        if (mouseButtonPressed) {
             this.x0 += dx;
-            System.out.println("changing x0 to " + this.x0);
             this.y0 += dy;
-            System.out.println("changing y0 to " + this.y0);
         }
     }
 
     /**
      * Action in response to a rotation of the mouse wheel.
      *
+     * @param nbClicks the number of mousewheel rotation units detected
+     * @param xCenter the x-coordinate of the mouse at the time of click
+     * @param yCenter the y-coordinate of the mouse at the time of click
      */
-    public void mouseWheelMoved(int nbClicks, int xCenter, int yCenter){
+    public void mouseWheelMoved(int nbClicks, int xCenter, int yCenter) {
 
         double currentZoomFactor;
-        System.out.println("nbClicks:" + nbClicks);
-        if(nbClicks > 0){
+        if (nbClicks > 0) {
             currentZoomFactor = 1 / standardZoomFactor;
-        } else{
+        } else {
             currentZoomFactor = standardZoomFactor;
         }
 
-        this.zoom = this.zoom * currentZoomFactor;
+        setZoomLevel(this.zoom * currentZoomFactor);
 
         x0 = (int) (currentZoomFactor * (x0 - xCenter) + xCenter);
         y0 = (int) (currentZoomFactor * (y0 - yCenter) + yCenter);
+    }
 
-        System.out.println("x0: " + x0 + ", y0: " + y0 + ", zoom: " + zoom);
+    /**
+     * Set the apparent position of the origin.
+     *
+     * @param newX0
+     * @param newY0
+     */
+    public void setScroll(int newX0, int newY0) {
+        x0 = newX0;
+        y0 = newY0;
+    }
+
+    /**
+     * Set the zoom level
+     *
+     * @param newZoomLevel
+     */
+    public void setZoomLevel(double newZoomLevel) {
+        zoom = newZoomLevel;
     }
 }
